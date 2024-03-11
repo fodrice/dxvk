@@ -409,12 +409,6 @@ namespace dxvk {
       m_deviceFeatures.khrPresentId.presentId &&
       m_deviceFeatures.khrPresentWait.presentWait;
 
-    // Unless we're on an Nvidia driver where these extensions are known to be broken
-    if (matchesDriver(VK_DRIVER_ID_NVIDIA_PROPRIETARY, 0, VK_MAKE_VERSION(535, 0, 0))) {
-      enabledFeatures.khrPresentId.presentId = VK_FALSE;
-      enabledFeatures.khrPresentWait.presentWait = VK_FALSE;
-    }
-
     // Enable raw access chains for shader backends
     enabledFeatures.nvRawAccessChains.shaderRawAccessChains =
       m_deviceFeatures.nvRawAccessChains.shaderRawAccessChains;
@@ -975,7 +969,7 @@ namespace dxvk {
 
   std::vector<DxvkExt*> DxvkAdapter::getExtensionList(
           DxvkDeviceExtensions&   devExtensions) {
-    return {{
+    std::vector<DxvkExt*> ret = {{
       &devExtensions.amdMemoryOverallocationBehaviour,
       &devExtensions.amdShaderFragmentMask,
       &devExtensions.extAttachmentFeedbackLoopLayout,
@@ -1003,14 +997,19 @@ namespace dxvk {
       &devExtensions.khrExternalSemaphoreWin32,
       &devExtensions.khrMaintenance5,
       &devExtensions.khrPipelineLibrary,
-      &devExtensions.khrPresentId,
-      &devExtensions.khrPresentWait,
       &devExtensions.khrSwapchain,
       &devExtensions.khrWin32KeyedMutex,
       &devExtensions.nvRawAccessChains,
       &devExtensions.nvxBinaryImport,
       &devExtensions.nvxImageViewHandle,
     }};
+    // On an Nvidia driver these extensions are known to be broken
+    if (m_deviceInfo.vk12.driverID != VK_DRIVER_ID_NVIDIA_PROPRIETARY)
+     {
+       ret.push_back(&devExtensions.khrPresentId);
+       ret.push_back(&devExtensions.khrPresentWait);
+     }
+    return ret;
   }
 
 
